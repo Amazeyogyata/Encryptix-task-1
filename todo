@@ -1,0 +1,141 @@
+import json
+import os
+import tkinter as tk
+from tkinter import messagebox
+
+FILENAME = "tasks.json"
+tasks = []
+
+# -------- File Operations --------
+def load_tasks():
+    global tasks
+    if os.path.exists(FILENAME):
+        with open(FILENAME, "r") as f:
+            tasks = json.load(f)
+    else:
+        tasks = []
+
+def save_tasks():
+    with open(FILENAME, "w") as f:
+        json.dump(tasks, f, indent=4)
+
+# -------- CLI Functions --------
+def cli_show_tasks():
+    if not tasks:
+        print("No tasks available.")
+        return
+    for i, t in enumerate(tasks, 1):
+        status = "✅" if t['done'] else "❌"
+        print(f"{i}. {t['task']} - {status}")
+
+def cli_add_task():
+    t = input("Enter new task: ")
+    tasks.append({"task": t, "done": False})
+    save_tasks()
+
+def cli_mark_done():
+    cli_show_tasks()
+    i = int(input("Mark task number as done: ")) - 1
+    if 0 <= i < len(tasks):
+        tasks[i]["done"] = True
+        save_tasks()
+    else:
+        print("Invalid task number.")
+
+def cli_delete_task():
+    cli_show_tasks()
+    i = int(input("Enter task number to delete: ")) - 1
+    if 0 <= i < len(tasks):
+        tasks.pop(i)
+        save_tasks()
+    else:
+        print("Invalid task number.")
+
+def cli_update_task():
+    cli_show_tasks()
+    i = int(input("Enter task number to update: ")) - 1
+    if 0 <= i < len(tasks):
+        new_text = input("Enter new task description: ")
+        tasks[i]["task"] = new_text
+        save_tasks()
+    else:
+        print("Invalid task number.")
+
+def cli_main():
+    while True:
+        print("\n1. Add Task\n2. View Tasks\n3. Mark as Done\n4. Delete Task\n5. Update Task\n6. Exit")
+        c = input("Choose: ")
+        if c == "1":
+            cli_add_task()
+        elif c == "2":
+            cli_show_tasks()
+        elif c == "3":
+            cli_mark_done()
+        elif c == "4":
+            cli_delete_task()
+        elif c == "5":
+            cli_update_task()
+        elif c == "6":
+            break
+        else:
+            print("Invalid option.")
+
+# -------- GUI Functions --------
+def gui_add_task():
+    task = entry.get()
+    if task:
+        tasks.append({"task": task, "done": False})
+        entry.delete(0, tk.END)
+        gui_update_list()
+        save_tasks()
+
+def gui_mark_done():
+    try:
+        idx = listbox.curselection()[0]
+        tasks[idx]["done"] = True
+        gui_update_list()
+        save_tasks()
+    except IndexError:
+        messagebox.showerror("Error", "No task selected.")
+
+def gui_update_list():
+    listbox.delete(0, tk.END)
+    for t in tasks:
+        status = "✅" if t["done"] else "❌"
+        listbox.insert(tk.END, f"{status} {t['task']}")
+
+def gui_main():
+    global entry, listbox
+
+    gui = tk.Tk()
+    gui.title("To-Do List (GUI)")
+
+    entry = tk.Entry(gui, width=40)
+    entry.pack(pady=5)
+
+    tk.Button(gui, text="Add Task", command=gui_add_task).pack(pady=2)
+    tk.Button(gui, text="Mark Done", command=gui_mark_done).pack(pady=2)
+
+    listbox = tk.Listbox(gui, width=50, height=10)
+    listbox.pack(pady=5)
+
+    gui_update_list()
+    gui.mainloop()
+
+# -------- Main Program --------
+def main():
+    load_tasks()
+    print("Choose mode:")
+    print("1. CLI Mode")
+    print("2. GUI Mode")
+    mode = input("Enter 1 or 2: ")
+
+    if mode == "1":
+        cli_main()
+    elif mode == "2":
+        gui_main()
+    else:
+        print("Invalid mode selected.")
+
+if __name__ == "_main_":
+    main()
